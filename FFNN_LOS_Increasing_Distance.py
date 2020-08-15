@@ -1,5 +1,6 @@
 # FEED-FORWARD NEURAL NETWORK (FFNN) for Line-of-sight calculations in diffrent terrain.
 
+
 #AUTHOR: BRIAN WADE, JOHN GRANT
 
 # CALL-IN LIBRARIES
@@ -8,8 +9,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from sklearn import preprocessing
-from sklearn.externals import joblib
+#from sklearn.externals import joblib
 import sklearn.model_selection as model_selection
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_curve, auc
 from keras.layers import Dense, Input, LocallyConnected1D, Dropout, BatchNormalization, Reshape, Flatten, LeakyReLU
 from keras.models import Model, Sequential, load_model
 from keras.constraints import maxnorm
@@ -17,11 +20,13 @@ from keras import optimizers
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.utils.vis_utils import plot_model
 
+
 import keras
 import os
 import tensorflow as tf
 
 # Save some models with pickle
+import joblib
 import pickle
 # !!! Saving models requires the h5py lib as well. !!!
 
@@ -37,12 +42,15 @@ startTime = datetime.now()
 
 
 # VARIABLES
-training_size=.8 #the training, testing and validation sizes must equal 1 (Example: .8+.1+.1 =1.0)
-validation_size=.5 #The validation set is a fraction of the test set.
+training_size = .8 #the training, testing and validation sizes must equal 1 (Example: .8+.1+.1 =1.0)
+validation_size = .5 #The validation set is a fraction of the test set.
 np.random.seed(5)
-epoch=200; #How many times to iterate over the training data.
-#losses='sparse_categorical_crossentropy'
-losses = 'binary_crossentropy'
+epoch = 200 #How many times to iterate over the training data.
+batch_size = 1
+#loss = 'sparse_categorical_crossentropy'
+loss = 'binary_crossentropy'
+
+weights = {0:40, 1:1}
 
 metrics=['accuracy']
 dropout1=0.2
@@ -66,12 +74,9 @@ mountains_data='mountains.csv'
 coast_data='coast.csv'
 
 #Go to data folder and read in data into individual dataframes
-#old_dir = os.getcwd()
-#os.chdir('.\\data')
 plains = pd.read_csv(os.path.join(current_dir, data_folder, plains_data), header=None)
 mountains = pd.read_csv(os.path.join(current_dir, data_folder, mountains_data), header=None)
 coast = pd.read_csv(os.path.join(current_dir, data_folder, coast_data), header=None)
-#os.chdir(old_dir)
 
 # combine data into a single dateframe
 terrain_set = ['plains','mountains','coast']
@@ -120,13 +125,18 @@ for terrain in terrain_set:
     # Note, the output_set has already essentially been scaled, so only scale the input_set.
     y = pd.DataFrame(output_set)
 
+    # Prevent Keras from thinking onehot encoded (https://stackoverflow.com/questions/48254832/keras-class-weight-in-multi-label-binary-classification)
+    first_entry_zero = np.where(y.iloc[:,0] == 0)
+    for entry in first_entry_zero:
+        y.iloc[entry,0] =1
+    
     #### Split data for training ####   
     X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, train_size=training_size, random_state=100, shuffle = True)
     X_test, X_val, y_test, y_val = model_selection.train_test_split(X_test, y_test, test_size=validation_size, random_state=1) 
 
     # initialize 
     end_pt_set = list(range(100,1100,100))
-    score_set = np.zeros((len(end_pt_set), 4)) # This will hold the neural net fit R^2 scores [end_pt, train, val, test]
+    score_set = np.zeros((len(end_pt_set), 7)) # This will hold the neural net fit R^2 scores [end_pt, train, val, test]
     index = 0
 
     # Loop through data with increasing end points
@@ -170,22 +180,17 @@ for terrain in terrain_set:
         model.add(Dense(input_dim,activation='sigmoid'))
             
         #### Compile and train the network ####
-        # optimizer1 = keras.optimizers.Adam(lr=learning_rate, beta_1=0.9, beta_2=0.999, amsgrad=False)
-        # model.compile(optimizer=optimizer1, loss = losses, metrics = metrics)
+        #optimizer1 = keras.optimizers.Adam(lr = learning_rate, beta_1 = 0.9, beta_2 = 0.999, amsgrad = False)
+        #model.compile(optimizer = optimizer1, loss = loss, metrics = metrics)
         # model.fit(X_train, y_train, batch_size=batch1, epochs=epoch, validation_split=.1)
 
-        # keras.optimizers.SGD(lr=0.99, momentum=0.99,  nesterov=True) 
-        # model.compile(loss='binary_crossentropy', optimizer='SGD', metrics=['accuracy'])
-        # model.fit(X_train, y_train, epochs=epoch, batch_size=4, validation_split=.1)
-
-        keras.optimizers.SGD(lr=0.99, momentum=0.99,  nesterov=True) 
-        model.compile(loss='binary_crossentropy', optimizer='SGD', metrics=['accuracy'])
-        es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience = 10)
-
-
+        keras.optimizers.SGD(lr = 0.99, momentum = 0.99,  nesterov = True) 
+        model.compile(loss = loss, optimizer = 'SGD', metrics = metrics)
+        es = EarlyStopping(monitor = 'val_loss', mode = 'min', verbose = 1, patience = 10)
+        
         model_name = os.path.join(current_dir, 'models', f'best_model_{terrain}_endpt_{end_pt}.h5')
         mc = ModelCheckpoint(model_name, monitor='val_loss', mode='min', verbose=1, save_best_only=True)
-        model.fit(X_train_now, y_train_now, batch_size=1, epochs=epoch, validation_data=(X_val_now, y_val_now), callbacks=[es, mc])
+        model.fit(X_train_now, y_train_now, batch_size = batch_size, epochs = epoch, class_weight = weights, validation_data=(X_val_now, y_val_now), callbacks=[es, mc])
 
         # load the saved model
         saved_model = load_model(model_name)    
@@ -195,10 +200,32 @@ for terrain in terrain_set:
         scores2 = saved_model.evaluate(X_val_now, y_val_now, verbose=0)
         scores3 = saved_model.evaluate(X_test_now, y_test_now, verbose=0)
 
-        score_set[index,:] = [end_pt,scores1[1], scores2[1], scores3[1]]
+        # Predict train, val, and test sets
+        yhat_train = model.predict(X_train_now)
+        yhat_val = model.predict(X_val_now)
+        yhat_test = model.predict(X_test_now)
+
+        # Flatten data for ROC and AUC calcs
+        yhat_train_flat = yhat_train.flatten()
+        yhat_val_flat = yhat_val.flatten()
+        yhat_test_flat = yhat_test.flatten()
+        
+        y_train_now_flat = y_train_now.values.flatten()
+        y_val_now_flat = y_val_now.values.flatten()
+        y_test_now_flat = y_test_now.values.flatten()
+       
+        # Area under ROC curve metric
+        auc_train = roc_auc_score(y_train_now_flat, yhat_train_flat)
+        auc_val = roc_auc_score(y_val_now_flat, yhat_val_flat)
+        auc_test = roc_auc_score(y_test_now_flat, yhat_test_flat)
+
+        # Records accuracy and AUC
+        score_set[index,:] = [end_pt, scores1[1], auc_train, scores2[1], auc_val, scores3[1], auc_test]
+        #score_set[index,:] = [end_pt, scores1[1], fpr_train, tpr_train, threshold_train, auc_train, scores2[1], fpr_val, tpr_val, threshold_val, auc_val, scores3[1], fpr_test, tpr_test, threshold_test, auc_test]
         index += 1
 
         np.savetxt(os.path.join(current_dir, 'Results',f'results_{terrain}_increasing_dis.csv'), score_set, delimiter=',')
+
 
 
 ## Plot results
