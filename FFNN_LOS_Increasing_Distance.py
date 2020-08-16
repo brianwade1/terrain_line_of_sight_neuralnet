@@ -1,6 +1,4 @@
 # FEED-FORWARD NEURAL NETWORK (FFNN) for Line-of-sight calculations in diffrent terrain.
-
-
 #AUTHOR: BRIAN WADE, JOHN GRANT
 
 # CALL-IN LIBRARIES
@@ -9,7 +7,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from sklearn import preprocessing
-#from sklearn.externals import joblib
 import sklearn.model_selection as model_selection
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve, auc
@@ -20,12 +17,10 @@ from keras import optimizers
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.utils.vis_utils import plot_model
 
-
 import keras
 import os
 import tensorflow as tf
 
-# Save some models with pickle
 import joblib
 import pickle
 # !!! Saving models requires the h5py lib as well. !!!
@@ -40,31 +35,30 @@ simplefilter(action='ignore', category=FutureWarning)
 from datetime import datetime
 startTime = datetime.now()
 
-
-# VARIABLES
+######################################################
+# Data Setup variables
 training_size = .8 #the training, testing and validation sizes must equal 1 (Example: .8+.1+.1 =1.0)
 validation_size = .5 #The validation set is a fraction of the test set.
 np.random.seed(5)
+
+# Training Hyperparameters
 epoch = 200 #How many times to iterate over the training data.
-batch_size = 1
+batch_size = 2
+learning_rate = 0.001
 #loss = 'sparse_categorical_crossentropy'
 loss = 'binary_crossentropy'
-
+metrics=['accuracy']
 weights = {0:40, 1:1}
 
-metrics=['accuracy']
-dropout1=0.2
-alpha1=0.3
-
-# Hyperparameters:
-learning_rate = 0.01
-batch1 = 2
+# Architecture Hyperparameters:
 HL1 = 250
 HL2 = 250
 HL3 = 500
 HL4 = 100
+dropout1=0.2
+alpha1=0.3
 
-
+######################################################
 #### Read and combine data  #####
 #Data files
 current_dir = os.getcwd()
@@ -162,17 +156,17 @@ for terrain in terrain_set:
 
         # Input and hidden layers
         model.add(Dense(1000,input_dim=input_dim,activation='elu')) 
-        model.add(Dropout(rate = 0.2))
+        #model.add(Dropout(rate = 0.2))
 
         model.add(Dense(HL1))
         model.add(LeakyReLU(alpha=alpha1))
-        model.add(Dropout(rate = dropout1)) 
+        #model.add(Dropout(rate = dropout1)) 
 
         model.add(Dense(HL2, activation='relu'))
-        model.add(Dropout(rate = dropout1))
+        #model.add(Dropout(rate = dropout1))
 
         model.add(Dense(HL3, activation='relu'))
-        model.add(Dropout(rate = dropout1))
+        #model.add(Dropout(rate = dropout1))
 
         # model.add(Dense(HL4, activation='relu'))
         # model.add(Dropout(rate = dropout1))
@@ -180,14 +174,13 @@ for terrain in terrain_set:
         model.add(Dense(input_dim,activation='sigmoid'))
             
         #### Compile and train the network ####
-        #optimizer1 = keras.optimizers.Adam(lr = learning_rate, beta_1 = 0.9, beta_2 = 0.999, amsgrad = False)
-        #model.compile(optimizer = optimizer1, loss = loss, metrics = metrics)
-        # model.fit(X_train, y_train, batch_size=batch1, epochs=epoch, validation_split=.1)
+        optimizer1 = keras.optimizers.Adam(lr = learning_rate, beta_1 = 0.9, beta_2 = 0.999, amsgrad = False)
+        model.compile(optimizer = optimizer1, loss = loss, metrics = metrics)
 
-        keras.optimizers.SGD(lr = 0.99, momentum = 0.99,  nesterov = True) 
-        model.compile(loss = loss, optimizer = 'SGD', metrics = metrics)
-        es = EarlyStopping(monitor = 'val_loss', mode = 'min', verbose = 1, patience = 10)
+        #keras.optimizers.SGD(lr = 0.99, momentum = 0.99,  nesterov = True) 
+        #model.compile(loss = loss, optimizer = 'SGD', metrics = metrics)
         
+        es = EarlyStopping(monitor = 'val_loss', mode = 'min', verbose = 1, patience = 10)
         model_name = os.path.join(current_dir, 'models', f'best_model_{terrain}_endpt_{end_pt}.h5')
         mc = ModelCheckpoint(model_name, monitor='val_loss', mode='min', verbose=1, save_best_only=True)
         model.fit(X_train_now, y_train_now, batch_size = batch_size, epochs = epoch, class_weight = weights, validation_data=(X_val_now, y_val_now), callbacks=[es, mc])
@@ -221,11 +214,21 @@ for terrain in terrain_set:
 
         # Records accuracy and AUC
         score_set[index,:] = [end_pt, scores1[1], auc_train, scores2[1], auc_val, scores3[1], auc_test]
-        #score_set[index,:] = [end_pt, scores1[1], fpr_train, tpr_train, threshold_train, auc_train, scores2[1], fpr_val, tpr_val, threshold_val, auc_val, scores3[1], fpr_test, tpr_test, threshold_test, auc_test]
         index += 1
 
         np.savetxt(os.path.join(current_dir, 'Results',f'results_{terrain}_increasing_dis.csv'), score_set, delimiter=',')
 
+        # Rind ROC curve
+        fpr_train, tpr_train, threshold_train = roc_curve(y_train_now_flat, yhat_train_flat)
+        fpr_val, tpr_val, threshold_val = roc_curve(y_val_now_flat, yhat_val_flat)
+        fpr_test, tpr_test, threshold_test = roc_curve(y_test_now_flat, yhat_test_flat)
+
+        ROC_values = [fpr_train, tpr_train, threshold_train, fpr_val, tpr_val, threshold_val, fpr_test, tpr_test, threshold_test]
+        #np.savetxt(os.path.join(current_dir, 'Results',f'ROC_values_{terrain}_{end_pt}.csv'), ROC_values, delimiter=',')
+        ROC_value_file_name = os.path.join(current_dir, 'Results',f'ROC_values_{terrain}_{end_pt}.csv')
+        with open(ROC_value_file_name,'wb') as f:
+            for row in ROC_values:
+                np.savetxt(f, [row], fmt = '%5f', delimiter = ',')
 
 
 ## Plot results
