@@ -20,7 +20,7 @@ The program used a fully-connected feed-forward neural network consisting of thr
 
 ## Results
 
-The program calculates the accuracy of the trained model on predicting line-of-sight for distances from 100 meters to 1,000 meters. The model was trained with the training data (80% of the full dataset), a validation set (10% of the full dataset) was used for early stopping during training (increase in the binary cross entropy loss function for the validation set with 10 epochs patience), and the models accuracy tested with a test set (10% of the full dataset withheld from all training). The results show the intuitive results that the accuracy for predicting line-of-sight was greatest for plains-type of terrain and smallest for mountain-type terrain. Additionally, the accuracy generally decreased for predictions of longer sets (more distant) terrain.
+The program calculates the accuracy of the trained model on predicting line-of-sight for distances from 100 meters to 1,000 meters. The model was trained with the training data (80% of the full dataset), a validation set (10% of the full dataset) was used for early stopping during training increase in the binary cross entropy loss function for the validation set with 10 epochs patience), and the models accuracy tested with a test set (10% of the full dataset withheld from all training). The results show the intuitive results that the accuracy for predicting line-of-sight was greatest for plains-type of terrain and smallest for mountain-type terrain. Additionally, the accuracy generally decreased for predictions of longer sets (more distant) terrain.
 
 ![Sample Output](/Images/results_all_increasing_dis.png)
 

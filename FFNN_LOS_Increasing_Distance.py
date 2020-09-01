@@ -237,7 +237,10 @@ for terrain in terrain_set:
                     np.savetxt(f, [row], fmt = '%5f', delimiter = ',')
 
 
-## Plot results
+## Save image of model architecture
+plot_model(model, to_file = os.path.join(current_dir, 'Images', 'NN_model.png'), show_shapes = True, show_layer_names = True)
+
+## Plot accuracy results
 coast_results = np.array(pd.read_csv(os.path.join(current_dir, 'Results', 'results_coast_increasing_dis.csv'), header = None))
 mountains_results = np.array(pd.read_csv(os.path.join(current_dir, 'Results', 'results_mountains_increasing_dis.csv'), header = None))
 plains_results = np.array(pd.read_csv(os.path.join(current_dir, 'Results', 'results_plains_increasing_dis.csv'), header = None))
@@ -282,12 +285,54 @@ ax.set_title('Test Data')
 ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
           fancybox=True, shadow=True, ncol=3)
 
-fig.tight_layout()
+fig.suptitle('Line of Sight Prediction Accuracy for Diffrent Terrain Types', fontsize=16)
 #plt.show()
-plt.savefig(os.path.join(current_dir, 'Images', 'results_all_increasing_dis.png'))
+plt.savefig(os.path.join(current_dir, 'Images', 'accuracy_allTerrain_increasing_dis.png'))
 
-# Save model summary
-plot_model(model, to_file = os.path.join(current_dir, 'Images', 'NN_model.png'), show_shapes = True, show_layer_names = True)
+## Plot AUC values
+fig = plt.figure(figsize=(15, 5))
+width = 0.2
+ind = np.arange(len(coast_results))
+
+ax = fig.add_subplot(131)
+ax.bar(ind, plains_results[:,2], width, color = 'green', label = 'Plains')
+ax.bar(ind + width, coast_results[:,2], width, color = 'blue', label = 'Coast')
+ax.bar(ind + 2*width, mountains_results[:,2], width, color = 'grey', label = 'Mountains')
+ax.set_xticks(ind + width)
+ax.set_xticklabels((plains_results[:,0]).astype(int))
+ax.set_xlabel('Predicted Distance (meters)')
+ax.set_ylabel('Prediction AUC')
+ax.set_title('Training Data')
+ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
+          fancybox=True, shadow=True, ncol=3)
+
+ax = fig.add_subplot(132)
+ax.bar(ind, plains_results[:,4], width, color = 'green', label = 'Plains')
+ax.bar(ind + width, coast_results[:,4], width, color = 'blue', label = 'Coast')
+ax.bar(ind + 2*width, mountains_results[:,4], width, color = 'grey', label = 'Mountains')
+ax.set_xticks(ind + width)
+ax.set_xticklabels((plains_results[:,0]).astype(int))
+ax.set_xlabel('Predicted Distance (meters)')
+#ax.set_ylabel('Prediction AUC')
+ax.set_title('Validation Data')
+ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
+          fancybox=True, shadow=True, ncol=3)
+
+ax = fig.add_subplot(133)
+ax.bar(ind, plains_results[:,6], width, color = 'green', label = 'Plains')
+ax.bar(ind + width, coast_results[:,6], width, color = 'blue', label = 'Coast')
+ax.bar(ind + 2*width, mountains_results[:,6], width, color = 'grey', label = 'Mountains')
+ax.set_xticks(ind + width)
+ax.set_xticklabels((plains_results[:,0]).astype(int))
+ax.set_xlabel('Predicted Distance (meters)')
+#ax.set_ylabel('Prediction AUC')
+ax.set_title('Test Data')
+ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
+          fancybox=True, shadow=True, ncol=3)
+
+fig.suptitle('Line of Sight Prediction Area Under the Receiver Operating Characteristics (ROC) Curve (AUC) for Diffrent Terrain Types', fontsize=16)
+#plt.show()
+plt.savefig(os.path.join(current_dir, 'Images', 'AUC_allTerrain_increasing_dis.png'))
 
 
 ## Calculate final run time and show complete
