@@ -259,9 +259,9 @@ ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
           fancybox=True, shadow=True, ncol=3)
 
 ax = fig.add_subplot(132)
-ax.bar(ind, plains_results[:,2], width, color = 'green', label = 'Plains')
-ax.bar(ind + width, coast_results[:,2], width, color = 'blue', label = 'Coast')
-ax.bar(ind + 2*width, mountains_results[:,2], width, color = 'grey', label = 'Mountains')
+ax.bar(ind, plains_results[:,3], width, color = 'green', label = 'Plains')
+ax.bar(ind + width, coast_results[:,3], width, color = 'blue', label = 'Coast')
+ax.bar(ind + 2*width, mountains_results[:,3], width, color = 'grey', label = 'Mountains')
 ax.set_xticks(ind + width)
 ax.set_xticklabels((plains_results[:,0]).astype(int))
 ax.set_xlabel('Predicted Distance (meters)')
@@ -271,9 +271,9 @@ ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
           fancybox=True, shadow=True, ncol=3)
 
 ax = fig.add_subplot(133)
-ax.bar(ind, plains_results[:,3], width, color = 'green', label = 'Plains')
-ax.bar(ind + width, coast_results[:,3], width, color = 'blue', label = 'Coast')
-ax.bar(ind + 2*width, mountains_results[:,3], width, color = 'grey', label = 'Mountains')
+ax.bar(ind, plains_results[:,5], width, color = 'green', label = 'Plains')
+ax.bar(ind + width, coast_results[:,5], width, color = 'blue', label = 'Coast')
+ax.bar(ind + 2*width, mountains_results[:,5], width, color = 'grey', label = 'Mountains')
 ax.set_xticks(ind + width)
 ax.set_xticklabels((plains_results[:,0]).astype(int))
 ax.set_xlabel('Predicted Distance (meters)')
@@ -289,55 +289,6 @@ plt.savefig(os.path.join(current_dir, 'Images', 'results_all_increasing_dis.png'
 # Save model summary
 plot_model(model, to_file = os.path.join(current_dir, 'Images', 'NN_model.png'), show_shapes = True, show_layer_names = True)
 
-
-# # Produce a ROC curve for each terrain set
-# fig, axs = plt.subplots(1,3, figsize=(15, 5))
-# lw = 2
-# i = 0
-# for terrain in terrain_set:
-#     ROC_value_file_name = os.path.join(current_dir, 'Results', f'ROC_values_{terrain}.csv')
-#     with open(ROC_value_file_name) as file:
-#         data_all = csv.reader(file, delimiter = ',')
-#         data = list(data_all)
-
-#     end_pt = data[0]
-#     auc_train = data[1]
-#     auc_val = data[2]
-#     auc_test = data[3]
-#     fpr_train = np.array(data[4])
-#     tpr_train = np.array(data[5])
-#     threshold_train = np.array(data[6])
-#     fpr_val = np.array(data[7])
-#     tpr_val = np.array(data[8])
-#     threshold_val = np.array(data[9])
-#     fpr_test = np.array(data[10])
-#     tpr_test = np.array(data[11])
-#     threshold_test = np.array(data[12])
-
-#     fpr_train_unique, ROC_train_unique_indices = np.unique(fpr_train, return_index = True)
-#     fpr_val_unique, ROC_val_unique_indices = np.unique(fpr_val, return_index = True)
-#     fpr_test_unique, ROC_test_unique_indices = np.unique(fpr_test, return_index = True)
-
-#     tpr_train_unique = tpr_train[ROC_train_unique_indices]
-#     tpr_val_unique = tpr_val[ROC_val_unique_indices]
-#     tpr_test_unique = tpr_test[ROC_test_unique_indices]
-
-#     axs[i].plot(fpr_train_unique, tpr_train_unique, color = 'darkblue', lw = lw, label = f'Train (area = {auc_train[0]})')
-#     axs[i].plot(fpr_val_unique, tpr_val_unique, color ='darkred', lw = lw, label = f'Validation (area = {auc_val[0]})')
-#     axs[i].plot(fpr_test_unique, tpr_test_unique, color = 'darkorange', lw = lw, label = f'Test (area = {auc_test[0]})')
-#     axs[i].plot([0, 1], [0, 1], color='navy', lw = lw, linestyle = '--')
-#     axs[i].set_xlim([0.0, 1.0])
-#     axs[i].set_ylim([0.0, 1.05])
-#     axs[i].set_xlabel('False Positive Rate')
-#     axs[i].set_ylabel('True Positive Rate')
-#     axs[i].set_title(f'ROC for {terrain} Terrain and {end_pt} Data Points')
-#     axs[i].legend(loc = "lower right")
-
-#     i += 1
-
-# fig.tight_layout()
-# #plt.show()
-# plt.savefig(os.path.join(current_dir, 'Images', 'ROC_Curves.png'))
 
 ## Calculate final run time and show complete
 time_delta = datetime.now() - startTime
