@@ -20,9 +20,13 @@ The program used a fully-connected feed-forward neural network consisting of thr
 
 ## Results
 
-The program calculates the accuracy of the trained model on predicting line-of-sight for distances from 100 meters to 1,000 meters. The model was trained with the training data (80% of the full dataset), a validation set (10% of the full dataset) was used for early stopping during training increase in the binary cross entropy loss function for the validation set with 10 epochs patience), and the models accuracy tested with a test set (10% of the full dataset withheld from all training). The results show the intuitive results that the accuracy for predicting line-of-sight was greatest for plains-type of terrain and smallest for mountain-type terrain. Additionally, the accuracy generally decreased for predictions of longer sets (more distant) terrain.
+The program calculates the accuracy of the trained model on predicting line-of-sight for distances from 100 meters to 1,000 meters. The model was trained with the training data (80% of the full dataset), a validation set (10% of the full dataset) was used for early stopping during training, and the models accuracy tested with a test set (10% of the full dataset withheld from all training). Early stopping occurred when the model observed an increase in the binary cross entropy loss function for the validation set with 10 epochs patience. The results show the intuitive results that the accuracy for predicting line-of-sight was greatest for plains-type of terrain and smallest for mountain-type terrain. Additionally, the accuracy generally decreased for predictions of longer sets (more distant) terrain.
 
-![Sample Output](/Images/results_all_increasing_dis.png)
+![Sample Output](/Images/accuracy_allTerrain_increasing_dis.png)
+
+The line-of-sight results are a binary label, 1 = the observer can see the distant point or 0 = the observer cannot see the distant point. The distribution of the 0 and 1 labels was not even in across the datasets. The imbalance can effect the accuracy metric so another way to observe the ability of the model to differentiate between the two cases is with the Receiver  Operating Characteristic (ROC) curve. This is a plot of the false positive rate vs. true positive rate of the model. The Area Under the ROC Curve (AUC) is a metric that describes the ability of the model to differentiate between the two classes. The AUC for the three terrain types is shown in the figure below. Most AUC values were over 0.8 except for distances of 100 meters. At 100 meters, there was a strong imbalance between the classes because most points were visible.
+
+![Sample Output](/Images/AUC_allTerrain_increasing_dis.png)
 
 ## Setup and Run
 
