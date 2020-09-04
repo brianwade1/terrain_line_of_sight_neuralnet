@@ -1,4 +1,4 @@
-coast.csv filter=lfs diff=lfs merge=lfs -text
-mountains.csv filter=lfs diff=lfs merge=lfs -text
-plains.csv filter=lfs diff=lfs merge=lfs -text
+Data/coast.csv filter=lfs diff=lfs merge=lfs -text
+Data/mountains.csv filter=lfs diff=lfs merge=lfs -text
+Data/plains.csv filter=lfs diff=lfs merge=lfs -text
 Data/* filter=lfs diff=lfs merge=lfs -text
